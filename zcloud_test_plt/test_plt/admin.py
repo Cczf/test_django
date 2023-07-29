@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import Project
 
-# Register your models here.
+# 将Models注册到这里
+admin.site.register(Project)
