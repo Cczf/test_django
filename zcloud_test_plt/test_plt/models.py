@@ -79,7 +79,7 @@ class ProjectMember(models.Model):
     # 状态
     status = models.BooleanField(default=True, verbose_name='状态')
     # 退出日期
-    quir_date = models.DateField(null=True, blank=True, verbose_name='退出日期')
+    quire_date = models.DateField(null=True, blank=True, verbose_name='退出日期')
     # 备忘录
     memo = models.CharField(max_length=200, verbose_name='备忘录', blank=True, null=True)
 
