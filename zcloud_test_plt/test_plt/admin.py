@@ -1,6 +1,9 @@
 from django.contrib import admin
-from .models import Project, ProjectMember, DeployEnv
+from django.forms import TextInput, Textarea
+
+from .models import Project, ProjectMember, DeployEnv, ApiDef, QueryParam, RequesHeader, RequesBody
 from django.contrib.admin import ModelAdmin
+from django.db import models
 
 
 class ProjectMemberInline(admin.TabularInline):  # 还有StackedInline 规矩化布局
@@ -17,6 +20,25 @@ class DeployEnvInline(admin.TabularInline):
     """
     model = DeployEnv
     extra = 1
+
+
+class QueryParamInline(admin.TabularInline):  # 还有StackedInline 规矩化布局
+    model = QueryParam
+    extra = 2
+
+
+class RequesHeaderInline(admin.TabularInline):  # 还有StackedInline 规矩化布局
+    model = RequesHeader
+    extra = 2
+
+
+class RequesBodyInline(admin.TabularInline):  # 还有StackedInline 规矩化布局
+    model = RequesBody
+    extra = 2
+    formfield_overrides = {
+        models.CharField: {'widget': TextInput(attrs={'size': '20'})},
+        models.TextField: {'widget': Textarea(attrs={'rows': '3', 'cols': 30})}
+    }
 
 
 @admin.register(Project)
@@ -63,3 +85,41 @@ class DeployEnvAdmin(ModelAdmin):
     list_display_links = ['name']
     list_filter = ['status']
     search_fields = ['name', 'hostname', 'memo']
+
+
+@admin.register(ApiDef)
+class ApidefAdmin(ModelAdmin):
+    """
+    接口定义
+    """
+    list_display = ['id', 'project', 'protocol', 'name', 'http_schema', 'http_method', 'deploy_env', 'uri', 'status']
+    list_display_links = ['name']
+    list_filter = ['status', 'http_schema', 'http_method']
+    search_fields = ['name', 'uri']
+    inlines = [QueryParamInline, RequesHeaderInline, RequesBodyInline]
+
+    fieldsets = (
+        ('基础信息', {
+            'fields': ('project', 'protocol', ('name', 'status'), 'deploy_env', 'created_by',)
+        }),
+        ('HTTP信息', {
+            'fields': (('http_schema', 'http_method'), 'uri', ('auth_type', 'body_type'))
+        }),
+        ('其他信息', {
+            'fields': (('db_name', 'db_username', 'db_password'),)
+        }),
+    )
+
+    actions = ['run_api']
+
+    def run_api(self, request, queryset):
+        """
+        接口执行
+        :param request:当前的HTTP的请求信息，由Django自动提供
+        :param queryset:当前页面上所选中的数据，由Django自动提供
+        :return:
+        """
+        pass
+
+
+
