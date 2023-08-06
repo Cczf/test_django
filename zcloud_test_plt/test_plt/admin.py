@@ -1,6 +1,10 @@
+import json
+
 from django.contrib import admin
 from django.forms import TextInput, Textarea
+from django.shortcuts import render
 
+from .forms import RunApiForm
 from .models import Project, ProjectMember, DeployEnv, ApiDef, QueryParam, RequesHeader, RequesBody
 from django.contrib.admin import ModelAdmin
 from django.db import models
@@ -119,7 +123,39 @@ class ApidefAdmin(ModelAdmin):
         :param queryset:当前页面上所选中的数据，由Django自动提供
         :return:
         """
-        pass
+        # 1 获取页面上选择的记录
+        api: ApiDef = queryset.first()
+
+        if 'run' in request.POST:  # 点击"运行"按钮后跑进
+            form = RunApiForm(request.POST)
+        else:
+            # 3 根据接口运行所需的参数构建一个表单
+            ps = {}
+            for p in api.qurry_params.all():  # type: QueryParam
+                ps.update({p.param_name: p.default_value})
+
+            hs = {}
+            for p in api.request_headers.all():  # type:RequesHeader
+                hs.update({p.header_name: p.default_value})
+
+            bs = {}
+            for p in api.request_body.all():  # type:RequesBody
+                if api.body_type == 'form-urlencoded':
+                    bs.update({p.param_name: p.default_value})
+                else:
+                    bs = p.default_raw
+
+            data = {}
+            data.update(request.POST)
+            if ps: data['query_params'] = json.dumps(ps, indent=2, ensure_ascii=False)
+            if hs: data['http_headers'] = json.dumps(hs, indent=2, ensure_ascii=False)
+            if bs: data['request_body'] = json.dumps(bs, indent=2, ensure_ascii=False) if isinstance(bs, dict) else bs
+
+            form = RunApiForm(initial=data)  # 首次：从列表页到中间页为空表单
+
+        return render(request, 'admin/run_api.html', context={'api': api,  # context为admin和templates的纽带
+                                                              'form': form})
 
 
 
+    run_api.short_description = '运行所选的 接口定义（只支持单选）'

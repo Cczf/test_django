@@ -210,6 +210,12 @@ class ApiDef(models.Model):
     # 最后更新时间
     updated_at = models.DateTimeField(auto_now=True, verbose_name='最近更新时间')
 
+    def to_url(self):
+        http_sch = self.http_schema
+        host = self.deploy_env.hostname  # 反向代理
+        port = self.deploy_env.port
+        uri = self.uri
+        return f"{http_sch}://{host}{uri}" if port in (80,443) else f"{http_sch}://{host}:{port}{uri}"
     class Meta:
         verbose_name = '接口定义'
         verbose_name_plural = verbose_name
